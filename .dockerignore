@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+Dockerfile*
+docker-compose*

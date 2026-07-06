@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: devpass
+    volumes:
+      - ./init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init.sh
+    ports: ["5432:5432"]
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  security.api:
+    build: ./src/Services/Security/Security.Api
+    depends_on: [postgres]
+    environment:
+      ConnectionStrings__Default: "Host=postgres;Database=security_db;..."
+
+  catalog.api:
+    build: ./src/Services/Catalog/Catalog.Api
+    depends_on: [postgres, rabbitmq]
+
+  auction.api:
+    build: ./src/Services/Auction/Auction.Api
+    depends_on: [postgres, rabbitmq, redis]
+    deploy:
+      replicas: 2          # ölçekleme testi için
+
+  gateway:
+    build: ./src/Gateway/ApiGateway
+    ports: ["5000:8080"]
+    depends_on: [security.api, catalog.api, auction.api]
