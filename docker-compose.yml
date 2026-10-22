@@ -1,37 +1,118 @@
+name: auction-app
+
 services:
+  # ---------------------------------------------------------------- altyapı
   postgres:
     image: postgres:16
+    container_name: auction-postgres
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
     volumes:
-      - ./init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init.sh
-    ports: ["5432:5432"]
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports: ["5672:5672", "15672:15672"]
+      - postgres-data:/var/lib/postgresql/data
+      # Her servise ayrı database: catalog_db + auction_db
+      - ./docker/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
-    image: redis:7
-    ports: ["6379:6379"]
+    image: redis:7-alpine
+    container_name: auction-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
-  security.api:
-    build: ./src/Services/Security/Security.Api
-    depends_on: [postgres]
-    environment:
-      ConnectionStrings__Default: "Host=postgres;Database=security_db;..."
+  # RabbitMQ'yu şimdilik varsayılan olarak başlatmıyoruz (SignalR için gerekmiyor).
+  # Açmak için:  docker compose --profile messaging up -d
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: auction-rabbitmq
+    profiles: ["messaging"]
+    ports:
+      - "5672:5672"
+      - "15672:15672" # management UI -> http://localhost:15672 (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
+  # ---------------------------------------------------------------- servisler
   catalog.api:
-    build: ./src/Services/Catalog/Catalog.Api
-    depends_on: [postgres, rabbitmq]
+    build:
+      # context repo kökü: API projesi kardeş projelere referans verebilsin
+      context: .
+      dockerfile: src/Services/Catalog/Catalog.API/Dockerfile
+    container_name: catalog-api
+    ports:
+      # host:container -> launchSettings'teki http portuyla aynı tuttum
+      - "5005:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__CatalogDb: "Host=postgres;Port=5432;Database=catalog_db;Username=postgres;Password=devpass"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
   auction.api:
-    build: ./src/Services/Auction/Auction.Api
-    depends_on: [postgres, rabbitmq, redis]
-    deploy:
-      replicas: 2          # ölçekleme testi için
+    build:
+      context: .
+      dockerfile: src/Services/Auction/Auction.API/Dockerfile
+    container_name: auction-api
+    ports:
+      - "5112:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__AuctionDb: "Host=postgres;Port=5432;Database=auction_db;Username=postgres;Password=devpass"
+      # SignalR backplane (birden fazla instance çalıştırınca gerekli olacak)
+      ConnectionStrings__Redis: "redis:6379"
+      # Servisler arası çağrı: container adı + container portu (host portu DEĞİL)
+      Services__CatalogApi: "http://catalog.api:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
-  gateway:
-    build: ./src/Gateway/ApiGateway
-    ports: ["5000:8080"]
-    depends_on: [security.api, catalog.api, auction.api]
+    # Ölçekleme testi (SignalR Redis backplane denemesi) için:
+    #   1) yukarıdaki `container_name` ve `ports` satırlarını kaldır
+    #   2) docker compose up -d --scale auction.api=2
+    # Not: Sabit port publish'i ile replica birlikte çalışmaz; ayrıca WebSocket
+    #      için önüne sticky session yapan bir gateway koymak gerekir.
+
+# -------------------------------------------------------------------- ileride
+# Aşağıdaki iki servis henüz kod içermiyor (klasörleri boş), o yüzden kapalı.
+# Projeler oluştuğunda Dockerfile'larını ekleyip bu bloğu aç.
+#
+#  gateway:
+#    build:
+#      context: .
+#      dockerfile: src/Gateway/ApiGateway/Dockerfile
+#    ports:
+#      - "5000:8080"
+#    depends_on: [catalog.api, auction.api]
+#
+#  security.api:
+#    build:
+#      context: .
+#      dockerfile: src/Services/Security/Security.API/Dockerfile
+#    environment:
+#      ConnectionStrings__SecurityDb: "Host=postgres;Port=5432;Database=security_db;Username=postgres;Password=devpass"
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+
+volumes:
+  postgres-data:

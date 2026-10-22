@@ -1,10 +1,40 @@
+# Build context repo köküdür; buradaki her satır o kökten değerlendirilir.
+# Amaç: build context'i küçük tutmak + host'taki bin/obj'un imaja sızmasını engellemek.
+
+# --- .NET build çıktıları (en kritik olanlar) ---
 **/bin/
 **/obj/
+**/out/
+**/publish/
+**/TestResults/
+**/*.binlog
+
+# --- Versiyon kontrolü / CI ---
 .git/
+.gitignore
+.gitattributes
+.github/
+
+# --- IDE / editör ---
 .vs/
 .vscode/
 .idea/
 *.user
 *.suo
-Dockerfile*
-docker-compose*
+*.swp
+**/.DS_Store
+
+# --- Docker'ın kendi dosyaları: imajın içine girmelerinin anlamı yok ---
+# (-f ile verilen Dockerfile bu listeden etkilenmez, güvenle ignore edilebilir)
+**/Dockerfile*
+**/.dockerignore
+docker-compose*.yml
+docker/
+
+# --- Çalışma zamanında imaja gerekmeyenler ---
+tests/
+**/*.md
+**/*.http
+.env
+.env.*
+**/secrets.json
