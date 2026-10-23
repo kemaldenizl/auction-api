@@ -1,9 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+  <!-- Katman: is kurallari, DTO'lar, Catalog servisine giden typed HttpClient -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Auction.Repository\Auction.Repository.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Contracts\BuildingBlocks.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
 
 </Project>

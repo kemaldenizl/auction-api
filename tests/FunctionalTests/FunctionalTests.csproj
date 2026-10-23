@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Uygulamayi bellek icinde ayaga kaldirip HTTP ve SignalR uzerinden test eder. -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TestCommon\TestCommon.csproj" />
+    <ProjectReference Include="..\..\src\Services\Auction\Auction.API\Auction.API.csproj" />
+    <ProjectReference Include="..\..\src\Services\Catalog\Catalog.API\Catalog.API.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+</Project>

@@ -32,12 +32,14 @@ services:
       timeout: 3s
       retries: 10
 
-  # RabbitMQ'yu şimdilik varsayılan olarak başlatmıyoruz (SignalR için gerekmiyor).
-  # Açmak için:  docker compose --profile messaging up -d
+  # Servisler arası olaylar (AuctionEnded, ProductUpdated/Deleted) buradan geçer.
+  # Artık zorunlu bir bileşen: profile altında değil.
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: auction-rabbitmq
-    profiles: ["messaging"]
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
       - "15672:15672" # management UI -> http://localhost:15672 (guest/guest)
@@ -46,6 +48,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      # RabbitMQ açılışı yavaş; bu süre boyunca başarısız denemeler sayılmaz.
+      start_period: 30s
 
   # ---------------------------------------------------------------- servisler
   catalog.api:
@@ -56,53 +60,68 @@ services:
     container_name: catalog-api
     ports:
       # host:container -> launchSettings'teki http portuyla aynı tuttum
+      # (gateway üzerinden de erişilebilir; bu port Swagger/hata ayıklama için)
       - "5005:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CatalogDb: "Host=postgres;Port=5432;Database=catalog_db;Username=postgres;Password=devpass"
+      RabbitMq__Host: "rabbitmq"
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
+  # DİKKAT: container_name ve ports bilinçli olarak BURADA DEĞİL,
+  # docker-compose.override.yml içinde. Sebebi: sabit isim ve sabit port
+  # replica ile çalışmaz. Override dosyası otomatik yüklendiği için normal
+  # kullanımda yine 5112'den erişilir; ölçekleme testinde devre dışı bırakılır:
+  #   docker compose -f docker-compose.yml up -d --scale auction.api=2
   auction.api:
     build:
       context: .
       dockerfile: src/Services/Auction/Auction.API/Dockerfile
-    container_name: auction-api
-    ports:
-      - "5112:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__AuctionDb: "Host=postgres;Port=5432;Database=auction_db;Username=postgres;Password=devpass"
       # SignalR backplane (birden fazla instance çalıştırınca gerekli olacak)
       ConnectionStrings__Redis: "redis:6379"
-      # Servisler arası çağrı: container adı + container portu (host portu DEĞİL)
+      RabbitMq__Host: "rabbitmq"
+      # Servisler arası SENKRON çağrı: container adı + container portu (host portu DEĞİL)
       Services__CatalogApi: "http://catalog.api:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
-    # Ölçekleme testi (SignalR Redis backplane denemesi) için:
-    #   1) yukarıdaki `container_name` ve `ports` satırlarını kaldır
-    #   2) docker compose up -d --scale auction.api=2
-    # Not: Sabit port publish'i ile replica birlikte çalışmaz; ayrıca WebSocket
-    #      için önüne sticky session yapan bir gateway koymak gerekir.
+  # ---------------------------------------------------------------- gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: src/Gateway/ApiGateway/Dockerfile
+    container_name: auction-gateway
+    ports:
+      # macOS'ta 5000 portu AirPlay Receiver (ControlCenter) tarafından tutuluyor,
+      # bu yüzden host tarafında 5080 kullanıyoruz.
+      - "5080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Hedefler: appsettings.json localhost diyor (dotnet run senaryosu),
+      # container içinde servis adlarıyla eziliyor.
+      ReverseProxy__Clusters__catalog__Destinations__catalog-1__Address: "http://catalog.api:8080/"
+      ReverseProxy__Clusters__auction__Destinations__auction-1__Address: "http://auction.api:8080/"
+    depends_on:
+      - catalog.api
+      - auction.api
+    restart: unless-stopped
 
 # -------------------------------------------------------------------- ileride
-# Aşağıdaki iki servis henüz kod içermiyor (klasörleri boş), o yüzden kapalı.
-# Projeler oluştuğunda Dockerfile'larını ekleyip bu bloğu aç.
-#
-#  gateway:
-#    build:
-#      context: .
-#      dockerfile: src/Gateway/ApiGateway/Dockerfile
-#    ports:
-#      - "5000:8080"
-#    depends_on: [catalog.api, auction.api]
+# Kimlik doğrulama ayrı servise taşınırsa burayı aç (bkz. README "Sırada ne var").
 #
 #  security.api:
 #    build:

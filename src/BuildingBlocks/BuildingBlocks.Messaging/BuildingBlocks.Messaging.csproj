@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- MassTransit + RabbitMQ kurulumu ve transactional outbox.
+       Sadece API katmanlari buna referans verir; Business yalnizca
+       Contracts'i (IEventPublisher + mesaj tipleri) gorur. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlocks.Contracts\BuildingBlocks.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="MassTransit.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+  </ItemGroup>
+
+</Project>

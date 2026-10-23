@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Tüm projeler için ortak ayarlar. Sürümleri tek yerden yönetmek
+       (Directory.Packages.props) yerine burada sadece dil/derleyici ayarları var. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- XML yorumu olmayan public üyeler için uyarı üretmesin -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

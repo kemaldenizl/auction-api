@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Testler arasinda paylasilan yardimcilar: fake'ler, entity builder'lari,
+       Postgres container fixture'i. Kendisi test projesi DEGIL. -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- Test projesi DEGIL: paylasilan yardimcilar. Bu olmadan `dotnet test`
+         bu assembly'de de test aramaya calisiyor ve hata veriyor. -->
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Services\Auction\Auction.Business\Auction.Business.csproj" />
+    <ProjectReference Include="..\..\src\Services\Catalog\Catalog.Business\Catalog.Business.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="xunit" />
+  </ItemGroup>
+
+</Project>

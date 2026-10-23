@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Katman bagimliliklarini derleme sonrasi dogrular:
+       yanlis yere using eklenmesini test kirmis olur. -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Services\Auction\Auction.API\Auction.API.csproj" />
+    <ProjectReference Include="..\..\src\Services\Catalog\Catalog.API\Catalog.API.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\BuildingBlocks.Contracts\BuildingBlocks.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+</Project>
