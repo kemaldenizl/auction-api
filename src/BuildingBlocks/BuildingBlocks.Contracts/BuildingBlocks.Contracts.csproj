@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Servisler arasi mesaj sozlesmeleri. Bilincli olarak BAGIMLILIKSIZ:
+       hem Catalog hem Auction buna referans verir, MassTransit'i tanimaz. -->
+
+</Project>
