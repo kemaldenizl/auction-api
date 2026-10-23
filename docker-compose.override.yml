@@ -1,0 +1,15 @@
+# Compose bu dosyayı OTOMATİK yükler (docker-compose.yml ile birlikte).
+# İçeriği yalnızca geliştirme kolaylığı: tek instance çalışırken
+# Auction API'ye doğrudan 5112'den erişip Swagger'ı açabilmek.
+#
+# Ölçekleme testinde bu dosyayı devre dışı bırakmak için -f ile yalnızca
+# temel dosyayı ver:
+#   docker compose -f docker-compose.yml up -d --scale auction.api=2
+# Bu durumda Auction API'ye yalnızca gateway üzerinden (:5080) erişilir;
+# sticky session'ı gateway, yayın dağıtımını Redis backplane yapar.
+
+services:
+  auction.api:
+    container_name: auction-api
+    ports:
+      - "5112:8080"

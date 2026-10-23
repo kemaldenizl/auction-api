@@ -1,12 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+  <!-- Katman: HTTP ucu + SignalR hub'i, DI kompozisyonu, Swagger -->
 
   <ItemGroup>
+    <ProjectReference Include="..\Auction.Business\Auction.Business.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks.Messaging\BuildingBlocks.Messaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WebApplicationFactory<Program> testlerden erisebilsin.
+         Top-level statement'li Program sinifi internal olarak uretiliyor. -->
+    <InternalsVisibleTo Include="FunctionalTests" />
+    <InternalsVisibleTo Include="IntegrationTests" />
   </ItemGroup>
 
 </Project>
